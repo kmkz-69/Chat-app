@@ -1,0 +1,53 @@
+version: "3.8"
+services:
+  sqlite3:
+    platform: linux/x86_64
+    image: keinos/sqlite3:latest
+    stdin_open: true
+    tty: true
+    restart: always
+    cap_add:
+      - SYS_NICE
+    volumes:
+      - "./database.sqlite:/var/lib/sqlite3/database.sqlite"
+    ports:
+      - "9906:3306"
+    
+  nginx:
+    depends_on:
+      - api
+      - app
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    ports:
+      - "3000:80"
+
+  api:
+    build:
+      dockerfile: Dockerfile
+      context: "./app"
+    volumes:
+      - /app/node_modules
+      - ./app:/app
+    environment:
+      REACT_APP_API_URL: chatrs.fr/api
+
+  app:
+    stdin_open: true
+    depends_on:
+      - api
+    environment:
+      REACT_APP_HOST: chatrs.fr
+      REACT_APP_NAME: chatrs
+      REACT_APP_TAGLINE: Let’s start a meeting with your team
+      SKIP_PREFLIGHT_CHECK: true
+      REACT_APP_API_URL: chatrs.fr/api
+    build:
+      dockerfile: Dockerfile
+      context: ./app
+    volumes:
+      - /app/node_modules
+      - ./app:/app
+
